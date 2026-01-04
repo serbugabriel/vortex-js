@@ -1,0 +1,12 @@
+node_modules/
+dist/
+versions/
+tmp/
+
+.env
+*.env
+
+input.*
+output.*
+
+package-lock.json

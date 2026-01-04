@@ -1,0 +1,1453 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VortexJS | The Singularity</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              void: "#000000",
+              "cyan-bright": "#00f3ff",
+              "purple-haze": "#bc13fe",
+              "matrix-green": "#0f0",
+              "dark-plate": "#0a0a0a",
+            },
+            fontFamily: {
+              mono: ['"JetBrains Mono"', "monospace"],
+              display: ['"Orbitron"', "sans-serif"],
+              tech: ['"Share Tech Mono"', "monospace"],
+            },
+            animation: {
+              flicker: "flicker 0.15s infinite",
+              slideUp: "slideUp 0.8s ease-out forwards",
+              fadeIn: "fadeIn 1s ease-out forwards",
+              "spin-slow": "spin 3s linear infinite",
+              "data-flow": "dataFlow 3s linear infinite",
+              "glitch-skew": "glitchSkew 1s infinite linear alternate-reverse",
+              "pulse-fast": "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+            keyframes: {
+              flicker: {
+                "0%": { opacity: 0.9 },
+                "50%": { opacity: 1.0 },
+                "100%": { opacity: 0.8 },
+              },
+              slideUp: {
+                "0%": { transform: "translateY(100%)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+              fadeIn: {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
+              },
+              spin: {
+                "0%": { transform: "rotate(0deg)" },
+                "100%": { transform: "rotate(360deg)" },
+              },
+              dataFlow: {
+                "0%": { strokeDashoffset: "1000" },
+                "100%": { strokeDashoffset: "0" },
+              },
+              glitchSkew: {
+                "0%": { transform: "skew(0deg)" },
+                "20%": { transform: "skew(-2deg)" },
+                "40%": { transform: "skew(2deg)" },
+                "60%": { transform: "skew(0deg)" },
+                "80%": { transform: "skew(1deg)" },
+                "100%": { transform: "skew(0deg)" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow-x: hidden;
+        background-color: #000;
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+      }
+      #world {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        outline: none;
+      }
+      .screen-fx {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9000;
+        background:
+          linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+          linear-gradient(
+            90deg,
+            rgba(255, 0, 0, 0.06),
+            rgba(0, 255, 0, 0.02),
+            rgba(0, 0, 255, 0.06)
+          );
+        background-size:
+          100% 2px,
+          3px 100%;
+        animation: flicker 0.15s infinite;
+      }
+      .vignette {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9001;
+        background: radial-gradient(
+          circle,
+          rgba(0, 0, 0, 0) 60%,
+          rgba(0, 0, 0, 0.8) 100%
+        );
+      }
+
+      /* LOGO GLITCH */
+      .glitch-logo {
+        position: relative;
+      }
+      .glitch-logo::before,
+      .glitch-logo::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        border-top: 2px solid #00f3ff;
+        clip-path: polygon(0 0, 100% 0, 50% 100%);
+      }
+      .glitch-logo::before {
+        left: 2px;
+        text-shadow: -1px 0 #ff00c1;
+        animation: glitch-skew 0.5s infinite linear alternate-reverse;
+        border-color: #bc13fe;
+        opacity: 0.7;
+      }
+      .glitch-logo::after {
+        left: -2px;
+        text-shadow: -1px 0 #00fff9;
+        animation: glitch-skew 1s infinite linear alternate-reverse;
+        border-color: #00f3ff;
+        opacity: 0.7;
+      }
+
+      /* Scrollbars */
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #050505;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 2px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #00f3ff;
+      }
+
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: #000;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        transition: opacity 0.8s ease-out;
+      }
+
+      .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(30px);
+        transition:
+          opacity 0.8s ease-out,
+          transform 0.8s ease-out;
+      }
+      .animate-on-scroll.animated {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* TERMINAL FIX */
+      .code-block {
+        background-color: #050505;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        height: 320px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: relative;
+        scrollbar-width: thin;
+        scrollbar-color: #333 #000;
+      }
+
+      /* HUD CARD STYLES */
+      .hud-card {
+        background: rgba(5, 5, 5, 0.8);
+        border: 1px solid rgba(0, 243, 255, 0.1);
+        position: relative;
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+      .hud-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 10px;
+        height: 10px;
+        border-top: 2px solid #00f3ff;
+        border-left: 2px solid #00f3ff;
+        transition: all 0.3s ease;
+      }
+      .hud-card::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 10px;
+        height: 10px;
+        border-bottom: 2px solid #00f3ff;
+        border-right: 2px solid #00f3ff;
+        transition: all 0.3s ease;
+      }
+      .hud-card:hover {
+        background: rgba(0, 243, 255, 0.05);
+        border-color: rgba(0, 243, 255, 0.3);
+        transform: translateY(-5px);
+      }
+      .hud-card:hover::before,
+      .hud-card:hover::after {
+        width: 100%;
+        height: 100%;
+        opacity: 0.1;
+      }
+
+      /* DETAILED PIPELINE STYLES */
+      .pipeline-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        padding: 40px 0;
+        overflow-x: auto;
+        min-width: 100%;
+      }
+      .pipeline-node-detail {
+        position: relative;
+        width: 140px;
+        padding: 15px;
+        background: #080808;
+        border: 1px solid #222;
+        z-index: 10;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+      }
+      .pipeline-node-detail:hover {
+        border-color: #00f3ff;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+        transform: scale(1.05);
+      }
+      .pipeline-node-detail::after {
+        content: "";
+        position: absolute;
+        top: -1px;
+        left: 50%;
+        width: 50%;
+        height: 2px;
+        background: #222;
+        transform: translateX(-50%);
+      }
+
+      /* SVG Connection Line */
+      .pipeline-connector {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        transform: translateY(-50%);
+        z-index: 0;
+        pointer-events: none;
+      }
+      .flow-path {
+        stroke-dasharray: 20;
+        animation: dataFlow 1s linear infinite;
+      }
+    </style>
+  </head>
+  <body class="selection:bg-cyan-bright selection:text-black">
+    <canvas id="world"></canvas>
+    <div class="screen-fx"></div>
+    <div class="vignette"></div>
+
+    <svg width="0" height="0">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color: #00f3ff; stop-opacity: 1" />
+          <stop offset="100%" style="stop-color: #0066ff; stop-opacity: 1" />
+        </linearGradient>
+        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color: #bc13fe; stop-opacity: 1" />
+          <stop offset="100%" style="stop-color: #ff00ff; stop-opacity: 1" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+      <div class="relative w-24 h-24 mb-8">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-full h-full relative animate-pulse">
+            <svg
+              viewBox="0 0 100 100"
+              class="w-full h-full drop-shadow-[0_0_10px_rgba(0,243,255,0.5)]"
+            >
+              <polygon
+                points="0,0 100,0 50,100"
+                fill="none"
+                stroke="#00f3ff"
+                stroke-width="2"
+              />
+              <polygon
+                points="0,0 100,0 50,100"
+                fill="none"
+                stroke="#bc13fe"
+                stroke-width="2"
+                class="opacity-50 blur-[2px] animate-pulse"
+                style="transform: scale(0.9); transform-origin: center"
+              />
+            </svg>
+            <div
+              class="absolute inset-0 border-t-2 border-cyan-bright opacity-0 animate-[glitchSkew_0.3s_infinite]"
+              style="clip-path: polygon(0 0, 100% 0, 50% 100%)"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div class="font-display text-4xl mb-2 tracking-widest text-white">
+        VORTEX<span class="text-cyan-bright">JS</span>
+      </div>
+      <div id="load-text" class="font-mono text-xs text-cyan-bright mt-2">
+        INITIALIZING... 0%
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div
+      id="content"
+      class="relative z-10 opacity-0 transition-opacity duration-1000"
+    >
+      <nav
+        class="fixed w-full z-50 p-6 flex justify-between items-center bg-black/80 backdrop-blur-md border-b border-white/5"
+      >
+        <div class="flex items-center gap-4 group cursor-pointer">
+          <div class="w-8 h-8 relative">
+            <svg viewBox="0 0 100 100" class="w-full h-full">
+              <polygon
+                points="10,10 90,10 50,90"
+                fill="none"
+                stroke="#00f3ff"
+                stroke-width="4"
+              />
+            </svg>
+            <div
+              class="absolute inset-0 bg-cyan-bright/20 animate-ping rounded-full opacity-20"
+            ></div>
+          </div>
+          <span
+            class="font-display tracking-widest text-lg text-white group-hover:text-cyan-bright transition-colors"
+            >VORTEX</span
+          >
+        </div>
+        <a
+          href="https://github.com/SSL-ACTX"
+          target="_blank"
+          class="font-tech text-xs border border-white/20 px-4 py-2 hover:bg-cyan-bright hover:text-black transition-all duration-300 relative overflow-hidden group"
+        >
+          <span class="relative z-10">GITHUB::ACCESS</span>
+          <div
+            class="absolute inset-0 bg-white/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"
+          ></div>
+        </a>
+      </nav>
+
+      <main>
+        <!-- Hero -->
+        <section
+          class="min-h-screen flex items-center justify-center relative px-6 pt-24"
+        >
+          <div class="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-8 relative">
+              <div
+                class="absolute -left-12 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-cyan-bright to-transparent opacity-50 hidden lg:block"
+              ></div>
+              <div
+                class="inline-flex items-center gap-2 text-cyan-bright text-xs font-tech tracking-[0.3em] border border-cyan-bright/30 px-3 py-1 bg-cyan-bright/5"
+              >
+                <span class="animate-pulse">●</span> V2.8.3 :: SYSTEM ONLINE
+              </div>
+              <h1
+                class="text-6xl md:text-8xl font-display font-bold leading-none"
+              >
+                <div class="overflow-hidden">
+                  <span
+                    id="hero-title-1"
+                    class="block transform translate-y-full animate-[slideUp_0.8s_ease-out_forwards_0.2s]"
+                    data-original="CODE"
+                    >CODE</span
+                  >
+                </div>
+                <div class="overflow-hidden">
+                  <span
+                    id="hero-title-2"
+                    class="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-bright to-purple-haze transform translate-y-full animate-[slideUp_0.8s_ease-out_forwards_0.4s]"
+                    data-original="EVOLVED"
+                    >EVOLVED</span
+                  >
+                </div>
+              </h1>
+              <p
+                class="text-gray-400 font-mono text-lg max-w-xl border-l-2 border-purple-haze pl-6 py-2 opacity-0 animate-[fadeIn_1s_ease-out_forwards_0.8s]"
+              >
+                The ultimate JavaScript obfuscation suite. Transforms readable
+                logic into a chaotic monolithic state machine.
+              </p>
+              <div
+                class="flex flex-wrap gap-4 opacity-0 animate-[fadeIn_1s_ease-out_forwards_1s]"
+              >
+                <button
+                  id="start-engine-btn"
+                  class="bg-white text-black font-bold font-display px-8 py-4 hover:bg-cyan-bright transition-colors clip-button"
+                >
+                  START_ENGINE
+                </button>
+                <button
+                  class="border border-white/30 text-white font-mono px-8 py-4 hover:border-white transition-colors"
+                >
+                  Documentation
+                </button>
+              </div>
+            </div>
+
+            <div class="tilt-card hidden lg:block">
+              <div
+                class="tilt-content p-6 rounded-lg relative overflow-hidden h-[400px] flex flex-col bg-black/60 border border-white/10 backdrop-blur-sm"
+              >
+                <div
+                  class="flex items-center justify-between border-b border-white/10 pb-4 mb-4"
+                >
+                  <div class="flex gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+                  </div>
+                  <div class="text-xs font-mono text-gray-500">
+                    compiler_output.log
+                  </div>
+                </div>
+                <div
+                  id="code-typer"
+                  class="font-mono text-xs text-matrix-green/80 overflow-hidden whitespace-pre-wrap leading-relaxed"
+                ></div>
+                <div
+                  class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] pointer-events-none opacity-50"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Project Philosophy -->
+        <section
+          class="py-32 px-6 relative border-t border-white/10 bg-black/40"
+        >
+          <div class="max-w-5xl mx-auto space-y-12">
+            <div class="animate-on-scroll text-center">
+              <h2 class="text-4xl font-display font-bold mb-4">
+                PROJECT <span class="text-purple-haze">PHILOSOPHY</span>
+              </h2>
+              <p class="text-gray-400 font-mono max-w-3xl mx-auto">
+                VortexJS systematically dismantles high-level constructs and
+                reassembles them as primitive operations within a unified
+                execution model.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Interactive Demo -->
+        <section class="py-32 px-6">
+          <div class="max-w-7xl mx-auto">
+            <div class="animate-on-scroll text-center mb-16">
+              <h2 class="text-4xl font-display font-bold mb-4">
+                LIVE <span class="text-cyan-bright">TRANSFORMATION</span>
+              </h2>
+              <p class="text-gray-400 font-mono max-w-3xl mx-auto mt-4">
+                Witness the real-time deconstruction loop.
+              </p>
+            </div>
+            <div
+              class="animate-on-scroll grid lg:grid-cols-2 gap-8 items-start"
+            >
+              <div>
+                <div
+                  class="flex justify-between items-center px-4 py-2 bg-[#0a0a0a] border border-b-0 border-white/10 rounded-t-sm"
+                >
+                  <span class="font-mono text-sm text-gray-400"
+                    >INPUT: source.js</span
+                  >
+                  <div
+                    class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+                  ></div>
+                </div>
+                <div class="code-block p-4 rounded-b-sm">
+                  <pre><code id="demo-before" class="language-js text-white whitespace-pre-wrap"></code></pre>
+                </div>
+              </div>
+              <div>
+                <div
+                  class="flex justify-between items-center px-4 py-2 bg-[#0a0a0a] border border-b-0 border-white/10 rounded-t-sm"
+                >
+                  <span class="font-mono text-sm text-gray-400"
+                    >OUTPUT: vortex.ob.js (VM Loop)</span
+                  >
+                  <div
+                    class="w-2 h-2 rounded-full bg-red-500 animate-pulse"
+                  ></div>
+                </div>
+                <div class="code-block p-4 rounded-b-sm relative group">
+                  <pre><code id="demo-after" class="language-js text-gray-400 break-all whitespace-pre-wrap text-xs"></code></pre>
+                  <div
+                    class="absolute bottom-4 right-4 text-[10px] font-mono text-purple-haze border border-purple-haze/30 px-2 py-1 bg-black/80"
+                  >
+                    ● CYCLIC RECURSION ACTIVE
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Detailed Transformation Pipeline (Revamped) -->
+        <section
+          class="py-32 px-6 bg-black/40 border-y border-white/10 overflow-hidden"
+        >
+          <div class="max-w-8xl mx-auto">
+            <div class="animate-on-scroll text-center mb-24">
+              <h2 class="text-4xl font-display font-bold mb-4">
+                FULL <span class="text-purple-haze">PIPELINE</span>
+              </h2>
+              <p class="text-gray-400 font-mono text-sm">
+                Seven-Stage Advanced Compilation Architecture
+              </p>
+            </div>
+
+            <div
+              class="animate-on-scroll pipeline-wrapper gap-6 md:gap-8 px-4 relative"
+            >
+              <svg
+                class="absolute top-1/2 left-0 w-full h-1 -translate-y-1/2 z-0 opacity-50 pointer-events-none"
+                preserveAspectRatio="none"
+              >
+                <line
+                  x1="0"
+                  y1="50%"
+                  x2="100%"
+                  y2="50%"
+                  stroke="#333"
+                  stroke-width="2"
+                />
+                <line
+                  x1="0"
+                  y1="50%"
+                  x2="100%"
+                  y2="50%"
+                  stroke="#00f3ff"
+                  stroke-width="2"
+                  stroke-dasharray="10 20"
+                  class="animate-data-flow opacity-50"
+                />
+              </svg>
+
+              <!-- Node 1: Source -->
+              <div class="pipeline-node-detail group">
+                <div
+                  class="text-cyan-bright font-display text-xs font-bold mb-2"
+                >
+                  INPUT
+                </div>
+                <div class="text-white text-sm font-bold">SOURCE CODE</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  Raw JS Entry
+                </div>
+                <div
+                  class="absolute bottom-0 left-0 w-full h-[2px] bg-cyan-bright transform scale-x-0 group-hover:scale-x-100 transition-transform"
+                ></div>
+              </div>
+
+              <!-- Node 2: AST -->
+              <div class="pipeline-node-detail group">
+                <div class="text-gray-500 font-display text-xs font-bold mb-2">
+                  PARSER
+                </div>
+                <div class="text-white text-sm font-bold">AST TREE</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  Acorn/Babel Parsing
+                </div>
+                <div
+                  class="absolute -top-3 left-1/2 -translate-x-1/2 text-cyan-bright text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ↓
+                </div>
+              </div>
+
+              <!-- Node 3: Analysis -->
+              <div class="pipeline-node-detail group border-purple-haze/30">
+                <div
+                  class="text-purple-haze font-display text-xs font-bold mb-2"
+                >
+                  PHASE 1
+                </div>
+                <div class="text-white text-sm font-bold">ANALYSIS</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  Prop Collection & MemMap
+                </div>
+              </div>
+
+              <!-- Node 4: IR Gen -->
+              <div class="pipeline-node-detail group bg-cyan-bright/5">
+                <div
+                  class="text-cyan-bright font-display text-xs font-bold mb-2"
+                >
+                  PHASE 2
+                </div>
+                <div class="text-white text-sm font-bold">IR GEN</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  Flattening & Deconstruct
+                </div>
+                <div
+                  class="absolute inset-0 border border-cyan-bright opacity-0 group-hover:opacity-100 transition-opacity animate-pulse"
+                ></div>
+              </div>
+
+              <!-- Node 5: Optimization -->
+              <div class="pipeline-node-detail group">
+                <div class="text-gray-500 font-display text-xs font-bold mb-2">
+                  PHASE 3
+                </div>
+                <div class="text-white text-sm font-bold">OPTIMIZER</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  Dead Code & Jump Threading
+                </div>
+              </div>
+
+              <!-- Node 6: AST Gen -->
+              <div class="pipeline-node-detail group border-purple-haze/30">
+                <div
+                  class="text-purple-haze font-display text-xs font-bold mb-2"
+                >
+                  PHASE 4
+                </div>
+                <div class="text-white text-sm font-bold">VM BUILDER</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  State Machine Injection
+                </div>
+              </div>
+
+              <!-- Node 7: Output -->
+              <div
+                class="pipeline-node-detail group border-cyan-bright shadow-[0_0_15px_rgba(0,243,255,0.1)]"
+              >
+                <div
+                  class="text-cyan-bright font-display text-xs font-bold mb-2"
+                >
+                  RESULT
+                </div>
+                <div class="text-white text-sm font-bold">OBFUSCATED</div>
+                <div class="mt-2 text-[10px] text-gray-500 font-mono">
+                  Final Output
+                </div>
+                <div
+                  class="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-cyan-bright rounded-full animate-ping"
+                ></div>
+              </div>
+            </div>
+            <div
+              class="text-center mt-6 md:hidden text-[10px] text-gray-500 animate-pulse"
+            >
+              &lt; SCROLL TO VIEW PIPELINE &gt;
+            </div>
+          </div>
+        </section>
+
+        <!-- Features -->
+        <section class="py-32 px-6 relative">
+          <div class="max-w-7xl mx-auto">
+            <div class="animate-on-scroll mb-20">
+              <h2 class="text-4xl font-display font-bold mb-4">
+                CORE <span class="text-cyan-bright">FEATURES</span>
+              </h2>
+              <div class="w-20 h-1 bg-cyan-bright mt-4"></div>
+            </div>
+            <div
+              class="animate-on-scroll grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+              id="card-grid"
+            ></div>
+          </div>
+        </section>
+
+        <!-- Terminal Section -->
+        <section
+          class="py-20 bg-black/60 backdrop-blur border-y border-white/10"
+        >
+          <div class="max-w-5xl mx-auto px-6">
+            <div class="animate-on-scroll">
+              <div class="font-mono text-sm text-gray-400 mb-2">
+                user@vortex-sys:~/deployment$
+              </div>
+              <div
+                class="bg-[#050505] border border-gray-800 rounded p-6 shadow-2xl relative overflow-hidden group"
+              >
+                <div
+                  id="cli-typer"
+                  class="space-y-2 font-mono text-sm md:text-base"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Roadmap -->
+      <section class="py-32 px-6 bg-black/40 border-y border-white/10">
+        <div class="max-w-4xl mx-auto">
+          <div class="animate-on-scroll text-center mb-16">
+            <h2 class="text-4xl font-display font-bold mb-4">
+              FUTURE <span class="text-purple-haze">ROADMAP</span>
+            </h2>
+            <p class="text-gray-400 font-mono">
+              The evolution never stops. Planned enhancements to the Vortex
+              core.
+            </p>
+          </div>
+          <div class="animate-on-scroll space-y-6">
+            <div
+              class="flex items-center gap-4 p-4 border border-white/10 rounded-lg bg-white/5 transition-all hover:border-cyan-bright hover:bg-cyan-bright/10"
+            >
+              <svg
+                class="w-6 h-6 text-cyan-bright flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3"
+                ></path>
+              </svg>
+              <div>
+                <h3 class="font-bold font-display text-white">
+                  Advanced IR Optimizations
+                </h3>
+                <p class="text-sm text-gray-400 font-mono">
+                  Implement constant folding, dead code elimination within
+                  states, and instruction combining.
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-4 p-4 border border-white/10 rounded-lg bg-white/5 transition-all hover:border-cyan-bright hover:bg-cyan-bright/10"
+            >
+              <svg
+                class="w-6 h-6 text-cyan-bright flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a5.5 5.5 0 010 7.778m14.15-7.778a5.5 5.5 0 010 7.778M5.58 8.111a5.5 5.5 0 017.778 0m7.072 7.072a5.5 5.5 0 010-7.778"
+                ></path>
+              </svg>
+              <div>
+                <h3 class="font-bold font-display text-white">
+                  Opaque Predicate Injection
+                </h3>
+                <p class="text-sm text-gray-400 font-mono">
+                  Insert dead code branches controlled by complex, statically
+                  irresolvable conditions to confuse analysis.
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-4 p-4 border border-white/10 rounded-lg bg-white/5 transition-all hover:border-cyan-bright hover:bg-cyan-bright/10"
+            >
+              <svg
+                class="w-6 h-6 text-cyan-bright flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                ></path>
+              </svg>
+              <div>
+                <h3 class="font-bold font-display text-white">
+                  Performance Profiling & JIT-Friendly Output
+                </h3>
+                <p class="text-sm text-gray-400 font-mono">
+                  Explore grouping frequently co-executed states to reduce
+                  dispatcher overhead and improve runtime speed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer
+        class="py-12 px-6 text-center text-gray-600 font-tech text-xs border-t border-white/5 bg-black/40"
+      >
+        <div class="animate-on-scroll">
+          VORTEXJS &copy; 2025 - 2026 | A PROJECT BY
+          <a
+            href="https://github.com/SSL-ACTX"
+            target="_blank"
+            class="text-gray-400 hover:text-cyan-bright transition-colors"
+            >SEURIIN (SSL-ACTX)</a
+          >
+          | PUBLIC DOMAIN
+        </div>
+      </footer>
+    </div>
+
+    <!-- TAKEOVER SCREEN FOR START ENGINE BUTTON -->
+    <div
+      id="takeover-screen"
+      class="fixed inset-0 bg-black z-[10001] hidden items-center justify-center flex-col opacity-0 transition-opacity duration-1000"
+    >
+      <div class="relative w-24 h-24 mb-8">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-full h-full relative animate-pulse">
+            <svg
+              viewBox="0 0 100 100"
+              class="w-full h-full drop-shadow-[0_0_10px_rgba(0,243,255,0.5)]"
+            >
+              <polygon
+                points="0,0 100,0 50,100"
+                fill="none"
+                stroke="#00f3ff"
+                stroke-width="2"
+              />
+              <polygon
+                points="0,0 100,0 50,100"
+                fill="none"
+                stroke="#bc13fe"
+                stroke-width="2"
+                class="opacity-50 blur-[2px] animate-pulse"
+                style="transform: scale(0.9); transform-origin: center"
+              />
+            </svg>
+            <div
+              class="absolute inset-0 border-t-2 border-cyan-bright opacity-0 animate-[glitchSkew_0.3s_infinite]"
+              style="clip-path: polygon(0 0, 100% 0, 50% 100%)"
+            ></div>
+          </div>
+        </div>
+      </div>
+      <div class="font-display text-4xl mb-2 tracking-widest text-white">
+        VORTEX<span class="text-cyan-bright">JS</span>
+      </div>
+    </div>
+
+    <!-- MAIN LOGIC -->
+    <script>
+      let animationFrameId;
+      let engineStartingState = {
+        active: false,
+        speed: 0.01,
+        fov: 85,
+      };
+
+      const initVortex = () => {
+        const canvas = document.querySelector("#world");
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.002); // Denser fog for wormhole depth
+
+        // Camera setup
+        const camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          2000,
+        );
+        camera.position.z = 100;
+
+        const renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: true,
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(
+          window.devicePixelRatio < 2.5 ? window.devicePixelRatio : 2.5,
+        ); // Cap pixel ratio for performance
+
+        // Wormhole Geometry
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 300000;
+        const posArray = new Float32Array(particlesCount * 3);
+        const colorArray = new Float32Array(particlesCount * 3);
+
+        const color1 = new THREE.Color(0x00f3ff); // Cyan
+        const color2 = new THREE.Color(0xbc13fe); // Purple
+        const color3 = new THREE.Color(0xffffff); // White stars
+
+        for (let i = 0; i < particlesCount; i++) {
+          const i3 = i * 3;
+
+          const radius = Math.random() * 50 + 20;
+          const angle = Math.random() * Math.PI * 3; // 3
+          const depth = (Math.random() - 0.5) * 1000; // 1k
+          const twist = depth * 0.05;
+
+          posArray[i3] = Math.cos(angle + twist) * radius;
+          posArray[i3 + 1] = Math.sin(angle + twist) * radius;
+          posArray[i3 + 2] = depth;
+
+          const mixedColor =
+            Math.random() > 0.8
+              ? color3
+              : color1.clone().lerp(color2, Math.random());
+          colorArray[i3] = mixedColor.r;
+          colorArray[i3 + 1] = mixedColor.g;
+          colorArray[i3 + 2] = mixedColor.b;
+        }
+
+        particlesGeometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(posArray, 3),
+        );
+        particlesGeometry.setAttribute(
+          "color",
+          new THREE.BufferAttribute(colorArray, 3),
+        );
+
+        const material = new THREE.PointsMaterial({
+          size: 0.4,
+          transparent: true,
+          vertexColors: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          opacity: 0.8,
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, material);
+        scene.add(particlesMesh);
+
+        let lastScrollY = window.scrollY;
+        let currentScrollY = window.scrollY;
+        let scrollSpeed = 0;
+
+        window.addEventListener("resize", () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.addEventListener("scroll", () => {
+          currentScrollY = window.scrollY;
+        });
+
+        const tick = () => {
+          const delta = currentScrollY - lastScrollY;
+          scrollSpeed = Math.abs(delta);
+          lastScrollY += delta * 0.13;
+
+          // Animate based on normal state or "engine start" state
+          if (engineStartingState.active) {
+            engineStartingState.speed += 0.001;
+            engineStartingState.fov += 0.25;
+            particlesMesh.rotation.z += engineStartingState.speed;
+            camera.fov = Math.min(120, engineStartingState.fov);
+          } else {
+            particlesMesh.rotation.z += 0.001 + scrollSpeed * 0.0005;
+            const targetFOV = 75 + scrollSpeed * 0.2;
+            camera.fov += (targetFOV - camera.fov) * 0.05;
+          }
+
+          camera.updateProjectionMatrix();
+
+          // --- Winding Path Logic ---
+          const time = Date.now() * 0.0001;
+          const pathRadius = 15; // How far the path deviates
+
+          const targetX = Math.sin(time * 0.7) * pathRadius;
+          const targetY = Math.cos(time * 0.5) * pathRadius;
+          const targetZ = 100 - currentScrollY * 0.1;
+
+          camera.position.x += (targetX - camera.position.x) * 0.05;
+          camera.position.y += (targetY - camera.position.y) * 0.05;
+          camera.position.z += (targetZ - camera.position.z) * 0.1;
+
+          camera.lookAt(
+            new THREE.Vector3(targetX, targetY, camera.position.z - 50),
+          );
+
+          renderer.render(scene, camera);
+          animationFrameId = window.requestAnimationFrame(tick);
+        };
+        tick();
+      };
+
+      document.addEventListener(
+        "visibilitychange",
+        () => {
+          if (document.hidden) {
+            if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
+          } else {
+            initVortex();
+          }
+        },
+        false,
+      );
+
+      // --- 2. BOOT SEQUENCE ---
+      const startBoot = () => {
+        const loader = document.getElementById("loader");
+        const content = document.getElementById("content");
+        const loadText = document.getElementById("load-text");
+
+        initVortex();
+
+        let percentage = 0;
+        const interval = setInterval(() => {
+          percentage += Math.random() * 5;
+          if (percentage > 100) percentage = 100;
+
+          loadText.innerText = `INITIALIZING NEURAL NET... ${Math.floor(percentage)}%`;
+
+          if (percentage === 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              loader.style.opacity = "0";
+              setTimeout(() => {
+                loader.style.display = "none";
+                content.style.opacity = "1";
+                startTypewriter("code-typer", HERO_CODE_SNIPPET);
+                startTitleFluctuation();
+                startDemoLoop();
+              }, 800);
+            }, 500);
+          }
+        }, 30);
+      };
+
+      // --- 3. TITLE FLUCTUATION LOGIC ---
+      const randomChar = () => {
+        const chars =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+        return chars[Math.floor(Math.random() * chars.length)];
+      };
+
+      class TextScrambler {
+        constructor(el) {
+          this.el = el;
+          this.originalText = el.getAttribute("data-original");
+          this.isScrambling = false;
+        }
+
+        scramble(duration = 1000) {
+          if (this.isScrambling) return;
+          this.isScrambling = true;
+          const length = this.originalText.length;
+          let startTime = Date.now();
+
+          const interval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / duration;
+
+            if (progress >= 1) {
+              this.el.innerText = this.originalText;
+              this.isScrambling = false;
+              clearInterval(interval);
+              return;
+            }
+
+            let newText = "";
+            for (let i = 0; i < length; i++) {
+              if (progress < 0.5 || i > (progress - 0.5) * 2 * length) {
+                newText += randomChar();
+              } else {
+                newText += this.originalText[i];
+              }
+            }
+            this.el.innerText = newText;
+          }, 50);
+        }
+      }
+
+      const startTitleFluctuation = () => {
+        const title1 = new TextScrambler(
+          document.getElementById("hero-title-1"),
+        );
+        const title2 = new TextScrambler(
+          document.getElementById("hero-title-2"),
+        );
+
+        setInterval(() => {
+          if (Math.random() > 0.3) {
+            title1.scramble(1200);
+            setTimeout(() => title2.scramble(1200), 200);
+          }
+        }, 5000);
+      };
+
+      // --- 4. AUTOMATED DEMO LOOP ---
+      const DEMO_CLEAN = `function factorial(n) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+console.log(factorial(5));`;
+
+      const DEMO_OBFUSCATED = `let M=new Array(10000),S=0;
+M[20]=10; // Init SP
+// "call factorial(5)"
+M[M[20]++]=99; // Push return addr
+M[0]=5; // Arg 'n'
+S=100; // Jump to factorial
+
+while(true){
+ switch(S){
+  // --- factorial(n) ---
+  case 100: // if (n <= 1)
+   S=(M[0]<=1)?101:102;break;
+  case 101: // return 1;
+   M[1]=1;S=200;break;
+  case 102: // n-1
+   M[2]=M[0]-1;S=103;break;
+  case 103: // factorial(n-1)
+   M[M[20]++]=104; // Push ret addr
+   M[0]=M[2];S=100;break;
+  case 104: // return from recursion
+   M[3]=M[1]; M[1]=M[0]*M[3];
+   S=200;break;
+  // --- return sequence ---
+  case 200:
+   S=M[--M[20]];break;
+  // --- Program End ---
+  case 99:
+   M[51]=M[1]; // Store result
+   console.log('Result:', M[51]);
+   return;
+ }
+}`;
+
+      const startDemoLoop = async () => {
+        const beforeEl = document.getElementById("demo-before");
+        const afterEl = document.getElementById("demo-after");
+        beforeEl.textContent = DEMO_CLEAN;
+
+        const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+        const animateText = (element, targetText, duration = 1500) => {
+          return new Promise((resolve) => {
+            const length = Math.max(
+              element.textContent.length,
+              targetText.length,
+            );
+            const startTime = Date.now();
+            const interval = setInterval(() => {
+              const elapsed = Date.now() - startTime;
+              let progress = elapsed / duration;
+              if (progress > 1) progress = 1;
+
+              let currentText = "";
+              const charsToReveal = Math.floor(progress * targetText.length);
+              currentText = targetText.substring(0, charsToReveal);
+
+              for (let i = 0; i < 20; i++) {
+                if (currentText.length < targetText.length + 50)
+                  currentText += randomChar();
+              }
+
+              element.textContent = currentText;
+
+              if (progress === 1) {
+                clearInterval(interval);
+                element.textContent = targetText;
+                resolve();
+              }
+            }, 40);
+          });
+        };
+
+        while (true) {
+          await animateText(afterEl, "// Waiting for input stream...", 800);
+          await delay(1500);
+          await animateText(afterEl, DEMO_OBFUSCATED, 2000);
+          await delay(4000);
+          await animateText(afterEl, DEMO_CLEAN, 1500);
+          await delay(2000);
+        }
+      };
+
+      // --- 5. UI & UTILITIES ---
+      const typeWriter = (element, text, speed = 15, onComplete = () => {}) => {
+        let i = 0;
+        element.innerHTML = "";
+        function type() {
+          if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(type, Math.random() * speed);
+          } else {
+            onComplete();
+          }
+        }
+        type();
+      };
+
+      const startTypewriter = (elementId, code) => {
+        const el = document.getElementById(elementId);
+        if (el) typeWriter(el, code);
+      };
+
+      const HERO_CODE_SNIPPET = `// VORTEX OUTPUT
+const _0x9a = ["J8k...", ...];
+(async function() {
+  let S = 42, M = [_0x9a];
+  // Monolithic Dispatcher
+  while(!![]) {
+    switch(S) {
+      case 42: M[1] = _E(0x1); S = 12; break;
+      case 12: S = M[0](M[1]) ? 9 : 99; break;
+      case 9: await _tick(); return M[3];
+    }
+  }
+})();`;
+
+      const CLI_ANIMATION_SCRIPT = [
+        { text: "npm install -g vortex-js", delay: 1000 },
+        { text: "vortex input.js out.js --intense", delay: 1500 },
+        {
+          text: "[+] Constructing State Machine...",
+          isComment: true,
+          delay: 500,
+        },
+        {
+          text: "[+] Encrypting String Literals (Hyperwave)...",
+          isComment: true,
+          delay: 500,
+        },
+        {
+          text: '<span class="text-cyan-bright">[SUCCESS] Obfuscation Complete. (42ms)</span>',
+          isHtml: true,
+          delay: 1000,
+        },
+      ];
+
+      // --- 6. HUD CARDS ---
+      const generateCards = () => {
+        const features = [
+          {
+            title: "Control-Flow Flattening",
+            desc: "Deconstructs all control structures into states within a central dispatcher loop.",
+            icon: "M4 6h16M4 12h16m-7 6h7",
+          },
+          {
+            title: "Async/Await Deconstruction",
+            desc: "Transforms async code into state-preserving pause/resume checkpoints.",
+            icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+          },
+          {
+            title: "Hyperwave™ Encryption",
+            desc: "Encrypts strings via a wave function, decoded at runtime to hide them from static analysis.",
+            icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
+          },
+          {
+            title: "ES6 Class Transformation",
+            desc: "Deconstructs classes into their underlying constructor functions and prototype assignments.",
+            icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h6m-6 4h6m-6 4h6",
+          },
+          {
+            title: "Lexical Scope Emulation",
+            desc: "Restores lexical scope for functions and closures after their original structure is destroyed.",
+            icon: "M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2V7a2 2 0 012-2h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V8z",
+          },
+          {
+            title: "Property Name Mangling",
+            desc: "Renames object and class property names to short, meaningless identifiers to obfuscate data structures.",
+            icon: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z",
+          },
+          {
+            title: "IR Optimization",
+            desc: "A peephole optimizer eliminates redundant operations, merges states, and removes dead code.",
+            icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.468V16.5a1.5 1.5 0 00-3 0v1.968a3.374 3.374 0 00-1.416.248l-.548-.547z",
+          },
+          {
+            title: "Exception Handling",
+            desc: "Fully supports try...catch...finally via an emulated exception handler stack.",
+            icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636",
+          },
+        ];
+        const grid = document.getElementById("card-grid");
+
+        features.forEach((f) => {
+          const div = document.createElement("div");
+          div.className = "hud-card h-64 p-6 flex flex-col cursor-crosshair";
+          div.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <svg class="w-6 h-6 text-cyan-bright" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${f.icon}"></path></svg>
+                        <div class="text-[10px] text-gray-600 font-mono">SYS.ID.${Math.floor(Math.random() * 900) + 100}</div>
+                    </div>
+                    <h3 class="text-sm font-bold font-display text-white mb-2 tracking-wide">${f.title.toUpperCase()}</h3>
+                    <p class="text-xs text-gray-400 font-mono leading-relaxed opacity-80">${f.desc}</p>
+                    <div class="mt-auto pt-4 flex gap-1">
+                        <div class="h-1 w-1 bg-cyan-bright rounded-full"></div>
+                        <div class="h-1 w-1 bg-cyan-bright/50 rounded-full"></div>
+                        <div class="h-1 w-1 bg-cyan-bright/20 rounded-full"></div>
+                    </div>
+                `;
+          grid.appendChild(div);
+        });
+      };
+
+      const initCliAnimation = () => {
+        const el = document.getElementById("cli-typer");
+        if (!el) return;
+        let currentLine = 0;
+        const cursor =
+          '<span class="w-2 h-5 bg-cyan-bright inline-block animate-pulse ml-1"></span>';
+
+        function runNextLine() {
+          if (currentLine >= CLI_ANIMATION_SCRIPT.length) {
+            el.innerHTML += `<div class="flex gap-3 items-center"><span class="text-purple-haze">➜</span>${cursor}</div>`;
+            return;
+          }
+          const line = CLI_ANIMATION_SCRIPT[currentLine];
+          const lineDiv = document.createElement("div");
+
+          if (line.isComment) {
+            lineDiv.className = "text-gray-500 pl-6 py-1";
+            lineDiv.innerHTML = line.text;
+            el.appendChild(lineDiv);
+            currentLine++;
+            setTimeout(runNextLine, line.delay);
+          } else if (line.isHtml) {
+            lineDiv.className = "pl-6 py-2";
+            lineDiv.innerHTML = line.text;
+            el.appendChild(lineDiv);
+            currentLine++;
+            setTimeout(runNextLine, line.delay);
+          } else {
+            lineDiv.className = "flex gap-3 items-center";
+            const prompt = '<span class="text-purple-haze">➜</span>';
+            const textSpan = document.createElement("span");
+            textSpan.className = "text-white";
+            lineDiv.innerHTML = prompt;
+            lineDiv.appendChild(textSpan);
+            el.appendChild(lineDiv);
+            typeWriter(textSpan, line.text, 50, () => {
+              currentLine++;
+              setTimeout(runNextLine, line.delay);
+            });
+          }
+        }
+        runNextLine();
+      };
+
+      const initScrollAnimations = () => {
+        const animatedElements =
+          document.querySelectorAll(".animate-on-scroll");
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("animated");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.1 },
+        );
+
+        animatedElements.forEach((el) => observer.observe(el));
+      };
+
+      // --- 7. "START ENGINE" LOGIC ---
+      const initStartEngine = () => {
+        const startBtn = document.getElementById("start-engine-btn");
+        const contentEl = document.getElementById("content");
+        const takeoverScreen = document.getElementById("takeover-screen");
+
+        if (!startBtn) return;
+
+        startBtn.addEventListener("click", () => {
+          engineStartingState.active = true;
+          contentEl.style.transition = "opacity 1.5s ease-out";
+          contentEl.style.opacity = "0";
+          setTimeout(() => {
+            takeoverScreen.classList.remove("hidden");
+            takeoverScreen.classList.add("flex");
+            setTimeout(() => {
+              takeoverScreen.style.opacity = "1";
+            }, 50);
+          }, 1300); // Wait for the vortex to speed up a bit
+        });
+      };
+
+      // --- INIT ---
+      window.addEventListener("DOMContentLoaded", () => {
+        startBoot();
+        generateCards();
+        initCliAnimation();
+        initScrollAnimations();
+        initStartEngine();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "name": "vortex-js",
+  "version": "3.0.2",
+  "description": "A modular JavaScript State Machine Merger that transforms a codebase into a single, monolithic state machine.",
+  "main": "index.js",
+  "bin": {
+    "vortex": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js -h",
+    "test": "node run-tests.js",
+    "build": "node build.js",
+    "perf": "node perf.js input.js output.js"
+  },
+  "keywords": [
+    "obfuscation",
+    "control-flow-flattening",
+    "state-machine",
+    "babel"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@babel/generator": "^7.28.5",
+    "@babel/parser": "^7.28.5",
+    "@babel/traverse": "^7.28.5",
+    "@babel/types": "^7.28.5",
+    "chalk": "^4.1.2",
+    "terser": "^5.44.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.1"
+  }
+}

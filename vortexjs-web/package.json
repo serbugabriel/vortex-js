@@ -1,0 +1,29 @@
+{
+  "name": "vortexjs-web",
+  "version": "1.0.0",
+  "description": "vortex-js web server",
+  "homepage": "https://github.com/SSL-ACTX/vortexjs-server#readme",
+  "bugs": {
+    "url": "https://github.com/SSL-ACTX/vortexjs-server/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SSL-ACTX/vortexjs-server.git"
+  },
+  "license": "MIT",
+  "author": "Seuriin",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.1",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1"
+  }
+}
