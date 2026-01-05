@@ -5,9 +5,10 @@
 <!-- Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=open-source-initiative)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg?style=for-the-badge&logo=node.js)](https://nodejs.org/)
-[![Architecture](https://img.shields.io/badge/Architecture-Stackless%20SVM-magenta.svg?style=for-the-badge&logo=cpu)]()
+[![Architecture](https://img.shields.io/badge/Architecture-SVM-magenta.svg?style=for-the-badge&logo=cpu)]()
 [![Optimization](https://img.shields.io/badge/IR_Opt-Level_3-yellow.svg?style=for-the-badge)]()
 [![Started](https://img.shields.io/badge/Started-Nov_24_2025-cyan.svg?style=for-the-badge&logo=calendar)]()
+[![Status](https://img.shields.io/badge/Status-Beta-red.svg?style=for-the-badge&logo=clock)](https://github.com/SSL-ACTX/vortex-js)
 
 [**Explore Internals**](#-architecture--internals) &middot; [**Report Bug**](https://github.com/SSL-ACTX/vortex-js/issues) &middot; [**Live Compiler**](https://vortexjs-server.onrender.com/)
 
@@ -15,8 +16,9 @@
 
 ---
 
-> **VortexJS is a Research-Grade Virtualization Engine.**
-> It is not a standard minifier. It is a source-to-source compiler that translates JavaScript into a custom bytecode instruction set, executed by a polymorphic, stackless virtual machine.
+> [!NOTE]
+> **VortexJS is a Research-Inspired Virtualization Engine.**
+> It is an educational study in compiler theory and software protection. It serves as a proof-of-concept for a source-to-source compiler that translates JavaScript into a custom bytecode instruction set, executed by a polymorphic, stackless virtual machine.
 
 **VortexJS** is an advanced **JavaScript Virtualization Engine** and **Optimizing Compiler**. It transforms standard ECMAScript code into a linear **Finite State Machine (FSM)** running atop a custom **stackless virtual machine**.
 
